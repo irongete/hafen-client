@@ -27,6 +27,7 @@
 package haven.render;
 
 import haven.*;
+
 import java.util.Arrays;
 
 public class Swizzle {
@@ -37,50 +38,50 @@ public class Swizzle {
     public final int[] perm;
 
     public Swizzle(int... perm) {
-	this.perm = perm;
+        this.perm = perm;
     }
 
     public boolean idp() {
-	for(int i = 0; i < perm.length; i++) {
-	    if(perm[i] != i)
-		return(false);
-	}
-	return(true);
+        for (int i = 0; i < perm.length; i++) {
+            if (perm[i] != i)
+                return (false);
+        }
+        return (true);
     }
 
     public String toString() {
-	StringBuilder buf = new StringBuilder();
-	buf.append("#<swizzle ");
-	for(int i = 0; i < perm.length; i++) {
-	    if(i > 0)
-		buf.append(',');
-	    buf.append(perm[i]);
-	}
-	buf.append(">");
-	return(buf.toString());
+        StringBuilder buf = new StringBuilder();
+        buf.append("#<swizzle ");
+        for (int i = 0; i < perm.length; i++) {
+            if (i > 0)
+                buf.append(',');
+            buf.append(perm[i]);
+        }
+        buf.append(">");
+        return (buf.toString());
     }
 
     public boolean equals(Object o) {
-	if(!(o instanceof Swizzle))
-	    return(false);
-	Swizzle that = (Swizzle)o;
-	if(this.perm.length != that.perm.length)
-	    return(false);
-	for(int i = 0; i < perm.length; i++) {
-	    if(this.perm[i] != that.perm[i])
-		return(false);
-	}
-	return(true);
+        if (!(o instanceof Swizzle))
+            return (false);
+        Swizzle that = (Swizzle) o;
+        if (this.perm.length != that.perm.length)
+            return (false);
+        for (int i = 0; i < perm.length; i++) {
+            if (this.perm[i] != that.perm[i])
+                return (false);
+        }
+        return (true);
     }
 
     public int hashCode() {
-	return(Arrays.hashCode(perm));
+        return (Arrays.hashCode(perm));
     }
 
     public static Swizzle id(int nc) {
-	int[] perm = new int[nc];
-	for(int i = 0; i < nc; i++)
-	    perm[i] = i;
-	return(new Swizzle(perm));
+        int[] perm = new int[nc];
+        for (int i = 0; i < nc; i++)
+            perm[i] = i;
+        return (new Swizzle(perm));
     }
 }

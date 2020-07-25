@@ -35,32 +35,34 @@ public class TexRaw implements Tex {
     private final ColorTex st;
 
     public TexRaw(Sampler2D back, boolean invert) {
-	this.back = back;
-	this.invert = invert;
-	this.st = new ColorTex(back);
+        this.back = back;
+        this.invert = invert;
+        this.st = new ColorTex(back);
     }
 
     public TexRaw(Sampler2D back) {
-	this(back, false);
+        this(back, false);
     }
 
-    public Coord sz() {return(back.tex.sz());}
+    public Coord sz() {
+        return (back.tex.sz());
+    }
 
     public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
-	Coord tdim = sz();
-	float tl = (float)tul.x / (float)tdim.x;
-	float tu = (float)tul.y / (float)tdim.y;
-	float tr = (float)tbr.x / (float)tdim.x;
-	float tb = (float)tbr.y / (float)tdim.y;
-	float[] data = {
-	    dbr.x, dul.y, tr, invert ? tb : tu,
-	    dbr.x, dbr.y, tr, invert ? tu : tb,
-	    dul.x, dul.y, tl, invert ? tb : tu,
-	    dul.x, dbr.y, tl, invert ? tu : tb,
-	};
-	g.usestate(st);
-	g.drawt(Model.Mode.TRIANGLE_STRIP, data);
-	g.usestate(ColorTex.slot);
+        Coord tdim = sz();
+        float tl = (float) tul.x / (float) tdim.x;
+        float tu = (float) tul.y / (float) tdim.y;
+        float tr = (float) tbr.x / (float) tdim.x;
+        float tb = (float) tbr.y / (float) tdim.y;
+        float[] data = {
+                dbr.x, dul.y, tr, invert ? tb : tu,
+                dbr.x, dbr.y, tr, invert ? tu : tb,
+                dul.x, dul.y, tl, invert ? tb : tu,
+                dul.x, dbr.y, tl, invert ? tu : tb,
+        };
+        g.usestate(st);
+        g.drawt(Model.Mode.TRIANGLE_STRIP, data);
+        g.usestate(ColorTex.slot);
     }
 
     public void dispose() {

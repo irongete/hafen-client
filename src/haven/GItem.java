@@ -42,146 +42,159 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 
     @RName("item")
     public static class $_ implements Factory {
-	public Widget create(UI ui, Object[] args) {
-	    int res = (Integer)args[0];
-	    Message sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):Message.nil;
-	    return(new GItem(ui.sess.getres(res), sdt));
-	}
+        public Widget create(UI ui, Object[] args) {
+            int res = (Integer) args[0];
+            Message sdt = (args.length > 1) ? new MessageBuf((byte[]) args[1]) : Message.nil;
+            return (new GItem(ui.sess.getres(res), sdt));
+        }
     }
 
     public interface ColorInfo {
-	public Color olcol();
+        public Color olcol();
     }
 
     public interface OverlayInfo<T> {
-	public T overlay();
-	public void drawoverlay(GOut g, T data);
+        public T overlay();
+
+        public void drawoverlay(GOut g, T data);
     }
 
     public static class InfoOverlay<T> {
-	public final OverlayInfo<T> inf;
-	public final T data;
+        public final OverlayInfo<T> inf;
+        public final T data;
 
-	public InfoOverlay(OverlayInfo<T> inf) {
-	    this.inf = inf;
-	    this.data = inf.overlay();
-	}
+        public InfoOverlay(OverlayInfo<T> inf) {
+            this.inf = inf;
+            this.data = inf.overlay();
+        }
 
-	public void draw(GOut g) {
-	    inf.drawoverlay(g, data);
-	}
+        public void draw(GOut g) {
+            inf.drawoverlay(g, data);
+        }
 
-	public static <S> InfoOverlay<S> create(OverlayInfo<S> inf) {
-	    return(new InfoOverlay<S>(inf));
-	}
+        public static <S> InfoOverlay<S> create(OverlayInfo<S> inf) {
+            return (new InfoOverlay<S>(inf));
+        }
     }
 
     public interface NumberInfo extends OverlayInfo<Tex> {
-	public int itemnum();
-	public default Color numcolor() {
-	    return(Color.WHITE);
-	}
+        public int itemnum();
 
-	public default Tex overlay() {
-	    return(new TexI(GItem.NumberInfo.numrender(itemnum(), numcolor())));
-	}
+        public default Color numcolor() {
+            return (Color.WHITE);
+        }
 
-	public default void drawoverlay(GOut g, Tex tex) {
-	    g.aimage(tex, g.sz(), 1, 1);
-	}
+        public default Tex overlay() {
+            return (new TexI(GItem.NumberInfo.numrender(itemnum(), numcolor())));
+        }
 
-	public static BufferedImage numrender(int num, Color col) {
-	    return(Utils.outline2(Text.render(Integer.toString(num), col).img, Utils.contrast(col)));
-	}
+        public default void drawoverlay(GOut g, Tex tex) {
+            g.aimage(tex, g.sz(), 1, 1);
+        }
+
+        public static BufferedImage numrender(int num, Color col) {
+            return (Utils.outline2(Text.render(Integer.toString(num), col).img, Utils.contrast(col)));
+        }
     }
 
     public interface MeterInfo {
-	public double meter();
+        public double meter();
     }
 
     public static class Amount extends ItemInfo implements NumberInfo {
-	private final int num;
+        private final int num;
 
-	public Amount(Owner owner, int num) {
-	    super(owner);
-	    this.num = num;
-	}
+        public Amount(Owner owner, int num) {
+            super(owner);
+            this.num = num;
+        }
 
-	public int itemnum() {
-	    return(num);
-	}
+        public int itemnum() {
+            return (num);
+        }
     }
 
     public GItem(Indir<Resource> res, Message sdt) {
-	this.res = res;
-	this.sdt = new MessageBuf(sdt);
+        this.res = res;
+        this.sdt = new MessageBuf(sdt);
     }
 
     public GItem(Indir<Resource> res) {
-	this(res, Message.nil);
+        this(res, Message.nil);
     }
 
     private Random rnd = null;
+
     public Random mkrandoom() {
-	if(rnd == null)
-	    rnd = new Random();
-	return(rnd);
+        if (rnd == null)
+            rnd = new Random();
+        return (rnd);
     }
-    public Resource getres() {return(res.get());}
+
+    public Resource getres() {
+        return (res.get());
+    }
+
     private static final OwnerContext.ClassResolver<GItem> ctxr = new OwnerContext.ClassResolver<GItem>()
-	.add(Glob.class, wdg -> wdg.ui.sess.glob)
-	.add(Session.class, wdg -> wdg.ui.sess);
-    public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+            .add(Glob.class, wdg -> wdg.ui.sess.glob)
+            .add(Session.class, wdg -> wdg.ui.sess);
+
+    public <T> T context(Class<T> cl) {
+        return (ctxr.context(cl, this));
+    }
+
     @Deprecated
-    public Glob glob() {return(ui.sess.glob);}
+    public Glob glob() {
+        return (ui.sess.glob);
+    }
 
     public GSprite spr() {
-	GSprite spr = this.spr;
-	if(spr == null) {
-	    try {
-		spr = this.spr = GSprite.create(this, res.get(), sdt.clone());
-	    } catch(Loading l) {
-	    }
-	}
-	return(spr);
+        GSprite spr = this.spr;
+        if (spr == null) {
+            try {
+                spr = this.spr = GSprite.create(this, res.get(), sdt.clone());
+            } catch (Loading l) {
+            }
+        }
+        return (spr);
     }
 
     public void tick(double dt) {
-	GSprite spr = spr();
-	if(spr != null)
-	    spr.tick(dt);
+        GSprite spr = spr();
+        if (spr != null)
+            spr.tick(dt);
     }
 
     public List<ItemInfo> info() {
-	if(info == null)
-	    info = ItemInfo.buildinfo(this, rawinfo);
-	return(info);
+        if (info == null)
+            info = ItemInfo.buildinfo(this, rawinfo);
+        return (info);
     }
 
     public Resource resource() {
-	return(res.get());
+        return (res.get());
     }
 
     public GSprite sprite() {
-	if(spr == null)
-	    throw(new Loading("Still waiting for sprite to be constructed"));
-	return(spr);
+        if (spr == null)
+            throw (new Loading("Still waiting for sprite to be constructed"));
+        return (spr);
     }
 
     public void uimsg(String name, Object... args) {
-	if(name == "num") {
-	    num = (Integer)args[0];
-	} else if(name == "chres") {
-	    synchronized(this) {
-		res = ui.sess.getres((Integer)args[0]);
-		sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):MessageBuf.nil;
-		spr = null;
-	    }
-	} else if(name == "tt") {
-	    info = null;
-	    rawinfo = new ItemInfo.Raw(args);
-	} else if(name == "meter") {
-	    meter = (int)((Number)args[0]).doubleValue();
-	}
+        if (name == "num") {
+            num = (Integer) args[0];
+        } else if (name == "chres") {
+            synchronized (this) {
+                res = ui.sess.getres((Integer) args[0]);
+                sdt = (args.length > 1) ? new MessageBuf((byte[]) args[1]) : MessageBuf.nil;
+                spr = null;
+            }
+        } else if (name == "tt") {
+            info = null;
+            rawinfo = new ItemInfo.Raw(args);
+        } else if (name == "meter") {
+            meter = (int) ((Number) args[0]).doubleValue();
+        }
     }
 }

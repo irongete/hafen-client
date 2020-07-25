@@ -31,16 +31,16 @@ public class TexSI implements Tex {
     public final Coord ul, br;
 
     public TexSI(Tex parent, Coord ul, Coord br) {
-	this.parent = parent;
-	this.ul = ul;
-	this.br = br;
+        this.parent = parent;
+        this.ul = ul;
+        this.br = br;
     }
 
     public Coord sz() {
-	return(br.sub(ul));
+        return (br.sub(ul));
     }
 
     public void render(GOut g, Coord dul, Coord dbr, Coord tul, Coord tbr) {
-	parent.render(g, dul, dbr, tul.add(ul), tbr.add(ul));
+        parent.render(g, dul, dbr, tul.add(ul), tbr.add(ul));
     }
 }

@@ -27,31 +27,37 @@
 package haven.render.gl;
 
 import java.nio.*;
+
 import haven.render.*;
 
 public class FillBuffers {
     public static class Array implements FillBuffer {
-	public final byte[] data;
-	private ByteBuffer bv = null;
+        public final byte[] data;
+        private ByteBuffer bv = null;
 
-	public Array(int sz) {
-	    this.data = new byte[sz];
-	}
+        public Array(int sz) {
+            this.data = new byte[sz];
+        }
 
-	public int size() {return(data.length);}
-	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
+        public int size() {
+            return (data.length);
+        }
 
-	public ByteBuffer push() {
-	    if(bv == null)
-		bv = ByteBuffer.wrap(data).order(ByteOrder.nativeOrder());
-	    return(bv);
-	}
+        public boolean compatible(Environment env) {
+            return (env instanceof GLEnvironment);
+        }
 
-	public void pull(ByteBuffer buf) {
-	    buf.get(data);
-	}
+        public ByteBuffer push() {
+            if (bv == null)
+                bv = ByteBuffer.wrap(data).order(ByteOrder.nativeOrder());
+            return (bv);
+        }
 
-	public void dispose() {
-	}
+        public void pull(ByteBuffer buf) {
+            buf.get(data);
+        }
+
+        public void dispose() {
+        }
     }
 }

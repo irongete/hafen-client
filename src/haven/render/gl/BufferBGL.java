@@ -31,62 +31,68 @@ import javax.media.opengl.*;
 
 public class BufferBGL extends BGL {
     public static final BufferBGL empty = new BufferBGL(0) {
-	    protected void add(Command cmd) {
-		throw(new RuntimeException());
-	    }
-	};
+        protected void add(Command cmd) {
+            throw (new RuntimeException());
+        }
+    };
     private Command[] list;
     private int n = 0;
 
     public BufferBGL(int c) {
-	list = new Command[Math.max(c, 1)];
+        list = new Command[Math.max(c, 1)];
     }
-    public BufferBGL() {this(128);}
+
+    public BufferBGL() {
+        this(128);
+    }
 
     public void run(GL3 gl) {
-	for(int i = 0; i < n; i++) {
-	    try {
-		list[i].run(gl);
-	    } catch(Exception exc) {
-		throw(new BGLException(this, list[i], exc));
-	    }
-	}
+        for (int i = 0; i < n; i++) {
+            try {
+                list[i].run(gl);
+            } catch (Exception exc) {
+                throw (new BGLException(this, list[i], exc));
+            }
+        }
     }
 
     public void abort() {
-	for(int i = 0; i < n; i++)
-	    list[i].abort();
+        for (int i = 0; i < n; i++)
+            list[i].abort();
     }
 
     protected void add(Command cmd) {
-	if(n >= list.length)
-	    list = Arrays.copyOf(list, list.length * 2);
-	list[n++] = cmd;
+        if (n >= list.length)
+            list = Arrays.copyOf(list, list.length * 2);
+        list[n++] = cmd;
     }
 
     public BufferBGL trim() {
-	list = Arrays.copyOf(list, n);
-	return(this);
+        list = Arrays.copyOf(list, n);
+        return (this);
     }
 
     protected Iterable<Command> dump() {
-	return(new Iterable<Command>() {
-		public Iterator<Command> iterator() {
-		    return(new Iterator<Command>() {
-			    int i = 0;
-			    public boolean hasNext() {
-				return(i < n);
-			    }
-			    public Command next() {
-				if(i < n)
-				    return(list[i++]);
-				throw(new NoSuchElementException());
-			    }
-			    public void remove() {
-				throw(new UnsupportedOperationException());
-			    }
-			});
-		}
-	    });
+        return (new Iterable<Command>() {
+            public Iterator<Command> iterator() {
+                return (new Iterator<Command>() {
+                    int i = 0;
+
+                    public boolean hasNext() {
+                        return (i < n);
+                    }
+
+                    public Command next() {
+                        if (i < n)
+                            return (list[i++]);
+                        throw (new NoSuchElementException());
+                    }
+
+                    public void remove() {
+                        throw (new UnsupportedOperationException());
+                    }
+                });
+            }
+        });
     }
 }

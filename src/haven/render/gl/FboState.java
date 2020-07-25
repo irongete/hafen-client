@@ -27,8 +27,10 @@
 package haven.render.gl;
 
 import static haven.Utils.eq;
+
 import haven.render.*;
 import haven.render.gl.GLFrameBuffer.*;
+
 import java.util.*;
 import javax.media.opengl.GL;
 
@@ -38,166 +40,172 @@ public class FboState extends GLState {
     public final int[] dbufs;
 
     public FboState(GLEnvironment env, GLFrameBuffer fbo, int[] dbufs) {
-	this.env = env;
-	this.fbo = fbo;
-	this.dbufs = dbufs;
+        this.env = env;
+        this.fbo = fbo;
+        this.dbufs = dbufs;
     }
 
     public void applydbufs(BGL gl) {
-	if(dbufs != null) {
-	    if(dbufs.length == 0)
-		gl.glDrawBuffer(GL.GL_NONE);
-	    else if(dbufs.length == 1)
-		gl.glDrawBuffer(dbufs[0]);
-	    else
-		gl.glDrawBuffers(dbufs.length, dbufs, 0);
-	}
-	/* Just set any valid read-buffer for completeness
-	 * checking. GLRender switches to the correct read-buffer
-	 * when needed. */
-	if(fbo == null) {
-	    if(env.nilfbo_id == 0)
-		gl.glReadBuffer(GL.GL_BACK);
-	    else
-		gl.glReadBuffer(env.nilfbo_db);
-	} else if(fbo.color.length == 0) {
-	    gl.glReadBuffer(GL.GL_NONE);
-	} else {
-	    gl.glReadBuffer(GL.GL_COLOR_ATTACHMENT0);
-	}
+        if (dbufs != null) {
+            if (dbufs.length == 0)
+                gl.glDrawBuffer(GL.GL_NONE);
+            else if (dbufs.length == 1)
+                gl.glDrawBuffer(dbufs[0]);
+            else
+                gl.glDrawBuffers(dbufs.length, dbufs, 0);
+        }
+        /* Just set any valid read-buffer for completeness
+         * checking. GLRender switches to the correct read-buffer
+         * when needed. */
+        if (fbo == null) {
+            if (env.nilfbo_id == 0)
+                gl.glReadBuffer(GL.GL_BACK);
+            else
+                gl.glReadBuffer(env.nilfbo_db);
+        } else if (fbo.color.length == 0) {
+            gl.glReadBuffer(GL.GL_NONE);
+        } else {
+            gl.glReadBuffer(GL.GL_COLOR_ATTACHMENT0);
+        }
     }
 
     public void apply(BGL gl) {
-	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
-	applydbufs(gl);
+        gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, fbo);
+        applydbufs(gl);
     }
 
     public void unapply(BGL gl) {
-	gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, null);
-	if(env.nilfbo_id == 0)
-	    gl.glDrawBuffer(GL.GL_BACK);
-	else
-	    gl.glDrawBuffer(env.nilfbo_db);
+        gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, null);
+        if (env.nilfbo_id == 0)
+            gl.glDrawBuffer(GL.GL_BACK);
+        else
+            gl.glDrawBuffer(env.nilfbo_db);
     }
 
     public void applyto(BGL gl, GLState to) {
-	FboState that = (FboState)to;
-	if(this.fbo != that.fbo)
-	    gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, that.fbo);
-	that.applydbufs(gl);
+        FboState that = (FboState) to;
+        if (this.fbo != that.fbo)
+            gl.glBindFramebuffer(GL.GL_FRAMEBUFFER, that.fbo);
+        that.applydbufs(gl);
     }
 
     private static boolean compatiblep(GLFrameBuffer fbo, Attachment[] color, Attachment depth) {
-	if(!eq(depth, fbo.depth))
-	    return(false);
-	search: for(Attachment s : color) {
-	    for(Attachment h : fbo.color) {
-		if(eq(h, s))
-		    continue search;
-	    }
-	    return(false);
-	}
-	return(true);
+        if (!eq(depth, fbo.depth))
+            return (false);
+        search:
+        for (Attachment s : color) {
+            for (Attachment h : fbo.color) {
+                if (eq(h, s))
+                    continue search;
+            }
+            return (false);
+        }
+        return (true);
     }
 
     private static GLFrameBuffer find(GLEnvironment env, Attachment[] color, Attachment depth) {
-	GLTexture from;
-	if(depth != null)
-	    from = depth.tex;
-	else if(color.length > 0)
-	    from = color[0].tex;
-	else
-	    throw(new NotImplemented("empty framebuffer"));
-	synchronized(from) {
-	    if(from.fbos != null) {
-		for(GLFrameBuffer fbo : from.fbos) {
-		    if(compatiblep(fbo, color, depth))
-			return(fbo);
-		}
-	    }
-	}
-	return(new GLFrameBuffer(env, color, depth));
+        GLTexture from;
+        if (depth != null)
+            from = depth.tex;
+        else if (color.length > 0)
+            from = color[0].tex;
+        else
+            throw (new NotImplemented("empty framebuffer"));
+        synchronized (from) {
+            if (from.fbos != null) {
+                for (GLFrameBuffer fbo : from.fbos) {
+                    if (compatiblep(fbo, color, depth))
+                        return (fbo);
+                }
+            }
+        }
+        return (new GLFrameBuffer(env, color, depth));
     }
 
     private static FboState forfvals(GLEnvironment env, Object depthp, Object[] fvalsp) {
-	Attachment depth = (Attachment)depthp;
-	Attachment[] color = new Attachment[fvalsp.length];
-	int nc = 0;
-	intern: for(int i = 0; i < fvalsp.length; i++) {
-	    if(fvalsp[i] == null)
-		continue;
-	    Attachment c = (Attachment)fvalsp[i];
-	    for(int o = 0; (o < color.length) && (color[o] != null); o++) {
-		if(color[o] == c)
-		    continue intern;
-	    }
-	    color[nc++] = c;
-	}
-	color = Arrays.copyOf(color, nc);
-	int[] dbufs = new int[fvalsp.length];
-	GLFrameBuffer fbo = find(env, color, depth);
-	search: for(int i = 0; i < fvalsp.length; i++) {
-	    if(fvalsp[i] == null) {
-		dbufs[i] = GL.GL_NONE;
-	    } else {
-		for(int o = 0; o < fbo.color.length; o++) {
-		    if(eq(fbo.color[o], fvalsp[i])) {
-			dbufs[i] = GL.GL_COLOR_ATTACHMENT0 + o;
-			continue search;
-		    }
-		}
-		throw(new RuntimeException());
-	    }
-	}
-	return(new FboState(env, fbo, dbufs));
+        Attachment depth = (Attachment) depthp;
+        Attachment[] color = new Attachment[fvalsp.length];
+        int nc = 0;
+        intern:
+        for (int i = 0; i < fvalsp.length; i++) {
+            if (fvalsp[i] == null)
+                continue;
+            Attachment c = (Attachment) fvalsp[i];
+            for (int o = 0; (o < color.length) && (color[o] != null); o++) {
+                if (color[o] == c)
+                    continue intern;
+            }
+            color[nc++] = c;
+        }
+        color = Arrays.copyOf(color, nc);
+        int[] dbufs = new int[fvalsp.length];
+        GLFrameBuffer fbo = find(env, color, depth);
+        search:
+        for (int i = 0; i < fvalsp.length; i++) {
+            if (fvalsp[i] == null) {
+                dbufs[i] = GL.GL_NONE;
+            } else {
+                for (int o = 0; o < fbo.color.length; o++) {
+                    if (eq(fbo.color[o], fvalsp[i])) {
+                        dbufs[i] = GL.GL_COLOR_ATTACHMENT0 + o;
+                        continue search;
+                    }
+                }
+                throw (new RuntimeException());
+            }
+        }
+        return (new FboState(env, fbo, dbufs));
     }
 
     public static FboState make(GLEnvironment env, Object depth, Object[] fvals) {
-	boolean any = false, img = true, def = true;
-	if(depth != null) {
-	    any = true;
-	    if(!(depth instanceof Attachment))
-		img = false;
-	    if(depth != DepthBuffer.defdepth)
-		def = false;
-	}
-	for(int i = 0; i < fvals.length; i++) {
-	    if(fvals[i] != null) {
-		any = true;
-		if(!(fvals[i] instanceof Attachment))
-		    img = false;
-		if(fvals[i] != FragColor.defcolor)
-		    def = false;
-	    }
-	}
-	if(!any) {
-	    throw(new NotImplemented("empty framebuffer"));
-	} else if(img) {
-	    return(forfvals(env, depth, fvals));
-	} else if(def) {
-	    if(depth == null)
-		throw(new IllegalArgumentException("The default OpenGL framebuffer cannot be depth-less"));
-	    int[] dbufs = new int[fvals.length];
-	    for(int i = 0; i < fvals.length; i++) {
-		if(fvals[i] == null) {
-		    dbufs[i] = GL.GL_NONE;
-		} else {
-		    if(env.nilfbo_id == 0)
-			dbufs[i] = GL.GL_BACK;
-		    else
-			dbufs[i] = env.nilfbo_db;
-		}
-	    }
-	    return(new FboState(env, null, dbufs));
-	} else {
-	    throw(new IllegalArgumentException(String.format("Illegal framebuffer configuration: depth=%s, colors=%s", depth, Arrays.asList(fvals))));
-	}
+        boolean any = false, img = true, def = true;
+        if (depth != null) {
+            any = true;
+            if (!(depth instanceof Attachment))
+                img = false;
+            if (depth != DepthBuffer.defdepth)
+                def = false;
+        }
+        for (int i = 0; i < fvals.length; i++) {
+            if (fvals[i] != null) {
+                any = true;
+                if (!(fvals[i] instanceof Attachment))
+                    img = false;
+                if (fvals[i] != FragColor.defcolor)
+                    def = false;
+            }
+        }
+        if (!any) {
+            throw (new NotImplemented("empty framebuffer"));
+        } else if (img) {
+            return (forfvals(env, depth, fvals));
+        } else if (def) {
+            if (depth == null)
+                throw (new IllegalArgumentException("The default OpenGL framebuffer cannot be depth-less"));
+            int[] dbufs = new int[fvals.length];
+            for (int i = 0; i < fvals.length; i++) {
+                if (fvals[i] == null) {
+                    dbufs[i] = GL.GL_NONE;
+                } else {
+                    if (env.nilfbo_id == 0)
+                        dbufs[i] = GL.GL_BACK;
+                    else
+                        dbufs[i] = env.nilfbo_db;
+                }
+            }
+            return (new FboState(env, null, dbufs));
+        } else {
+            throw (new IllegalArgumentException(String.format("Illegal framebuffer configuration: depth=%s, colors=%s", depth, Arrays.asList(fvals))));
+        }
     }
 
     public static void set(BGL gl, Applier st, Object depth, Object[] fvals) {
-	st.apply(gl, make(st.env, depth, fvals));
+        st.apply(gl, make(st.env, depth, fvals));
     }
 
     public static int slot = slotidx(FboState.class);
-    public int slotidx() {return(slot);}
+
+    public int slotidx() {
+        return (slot);
+    }
 }
