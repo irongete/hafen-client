@@ -58,6 +58,7 @@ public class Config {
     public static final String confid = "";
 
     public static boolean invertcameraaxis = Utils.getprefb("invertcameraaxis", false);
+    public static boolean instantflowermenu = Utils.getprefb("instantflowermenu", false);
 
     static {
         String p;

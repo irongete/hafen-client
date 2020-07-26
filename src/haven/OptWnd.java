@@ -31,7 +31,7 @@ import java.util.*;
 import java.awt.font.TextAttribute;
 
 public class OptWnd extends Window {
-    public final Panel camera, main, video, audio, keybind;
+    public final Panel camera, userinterface, main, video, audio, keybind;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -93,6 +93,29 @@ public class OptWnd extends Window {
                 public void set(boolean val) {
                     Utils.setprefb("invertcameraaxis", val);
                     Config.invertcameraaxis = val;
+                    a = val;
+                }
+            });
+
+
+            pack();
+        }
+    }
+
+    public class UIPanel extends Panel {
+        public UIPanel(Panel back) {
+            super();
+            add(new PButton(200, "Back", 27, back), new Coord(0, 310));
+
+            int y = 0;
+            add(new CheckBox("Instant Flower Menu") {
+                {
+                    a = Config.instantflowermenu;
+                }
+
+                public void set(boolean val) {
+                    Utils.setprefb("instantflowermenu", val);
+                    Config.instantflowermenu = val;
                     a = val;
                 }
             });
@@ -547,12 +570,14 @@ public class OptWnd extends Window {
         super(Coord.z, "Options", true);
         main = add(new Panel());
         camera = add(new CameraPanel(main));
+        userinterface = add(new UIPanel(main));
         video = add(new VideoPanel(main));
         audio = add(new Panel());
         keybind = add(new BindingPanel(main));
         int y;
 
         main.add(new PButton(200, "Camera", 'v', camera), new Coord(0, 0));
+        main.add(new PButton(200, "Interface", 'v', userinterface), new Coord(0, 0));
         main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 30));
         main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 60));
         main.add(new PButton(200, "Keybindings", 'k', keybind), new Coord(0, 90));
