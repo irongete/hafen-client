@@ -57,6 +57,7 @@ public class Config {
     public static String prefspec = "hafen";
     public static final String confid = "";
 
+    public static boolean quickslots = Utils.getprefb("quickslots", true);
     public static boolean invertcameraaxis = Utils.getprefb("invertcameraaxis", false);
     public static boolean instantflowermenu = Utils.getprefb("instantflowermenu", false);
 

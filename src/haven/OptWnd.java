@@ -576,8 +576,8 @@ public class OptWnd extends Window {
         keybind = add(new BindingPanel(main));
         int y;
 
-        main.add(new PButton(200, "Camera", 'v', camera), new Coord(0, 0));
-        main.add(new PButton(200, "Interface", 'v', userinterface), new Coord(0, 30));
+        main.add(new PButton(200, "Interface", 'v', userinterface), new Coord(0, 0));
+        main.add(new PButton(200, "Camera", 'v', camera), new Coord(0, 30));
         main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 60));
         main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 90));
         main.add(new PButton(200, "Keybindings", 'k', keybind), new Coord(0, 120));

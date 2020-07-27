@@ -59,6 +59,18 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
         public void drawoverlay(GOut g, T data);
     }
 
+    public String getname() {
+        if (rawinfo == null) {
+            return "";
+        }
+
+        try {
+            return ItemInfo.find(ItemInfo.Name.class, info()).str.text;
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
     public static class InfoOverlay<T> {
         public final OverlayInfo<T> inf;
         public final T data;

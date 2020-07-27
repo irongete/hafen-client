@@ -40,6 +40,7 @@ import static haven.Inventory.sqsz;
 public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
+    public static final Color famountclr = new Color(24, 116, 205);
     private Resource cspr = null;
     private Message csdt = Message.nil;
 

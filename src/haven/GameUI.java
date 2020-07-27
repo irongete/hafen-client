@@ -68,6 +68,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Belt beltwdg;
     public final Map<Integer, String> polowners = new HashMap<Integer, String>();
     public Bufflist buffs;
+    public QuickSlotsWdg quickslots;
 
     private static final OwnerContext.ClassResolver<BeltSlot> beltctxr = new OwnerContext.ClassResolver<BeltSlot>()
             .add(Glob.class, slot -> slot.wdg().ui.sess.glob)
@@ -202,6 +203,11 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         opts.hide();
         zerg = add(new Zergwnd(), Utils.getprefc("wndc-zerg", new Coord(187, 50)));
         zerg.hide();
+
+        //quickslots = new QuickSlotsWdg();
+        quickslots = add(new QuickSlotsWdg());
+        //add(quickslots, Utils.getprefc("quickslotsc", new Coord(300, 80)));
+
     }
 
     public static final KeyBinding kb_map = KeyBinding.get("map", KeyMatch.forchar('A', KeyMatch.C));
@@ -694,6 +700,16 @@ public class GameUI extends ConsoleHost implements Console.Directory {
             }
         }
         return (opt);
+    }
+
+    public Equipory getequipory() {
+        if (equwnd != null) {
+            for (Widget w = equwnd.lchild; w != null; w = w.prev) {
+                if (w instanceof Equipory)
+                    return (Equipory) w;
+            }
+        }
+        return null;
     }
 
     private void savewndpos() {
@@ -1289,6 +1305,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         }
         wdgmsg("act", al);
     }
+
+
 
     public class FKeyBelt extends Belt implements DTarget, DropTarget {
         public final int beltkeys[] = {KeyEvent.VK_F1, KeyEvent.VK_F2, KeyEvent.VK_F3, KeyEvent.VK_F4,
