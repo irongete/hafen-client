@@ -49,6 +49,17 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
         }
     }
 
+    public ItemInfo.Contents getcontents() {
+        try {
+            for (ItemInfo info : info()) {
+                if (info instanceof ItemInfo.Contents)
+                    return (ItemInfo.Contents) info;
+            }
+        } catch (Exception e) { // fail silently if info is not ready
+        }
+        return null;
+    }
+
     public interface ColorInfo {
         public Color olcol();
     }

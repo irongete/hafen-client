@@ -28,6 +28,7 @@ package haven;
 
 import java.net.URL;
 import java.io.PrintStream;
+import java.util.HashMap;
 
 import static haven.Utils.getprop;
 
@@ -84,6 +85,31 @@ public class Config {
             throw (new RuntimeException(e));
         }
     }
+
+    public final static HashMap<String, CheckListboxItem> flowermenus = new HashMap<String, CheckListboxItem>(21) {{
+        put("Pick", new CheckListboxItem("Pick", Resource.BUNDLE_FLOWER));
+        put("Harvest", new CheckListboxItem("Harvest", Resource.BUNDLE_FLOWER));
+        put("Eat", new CheckListboxItem("Eat", Resource.BUNDLE_FLOWER));
+        put("Split", new CheckListboxItem("Split", Resource.BUNDLE_FLOWER));
+        put("Kill", new CheckListboxItem("Kill", Resource.BUNDLE_FLOWER));
+        put("Slice", new CheckListboxItem("Slice", Resource.BUNDLE_FLOWER));
+        put("Pluck", new CheckListboxItem("Pluck", Resource.BUNDLE_FLOWER));
+        put("Clean", new CheckListboxItem("Clean", Resource.BUNDLE_FLOWER));
+        put("Skin", new CheckListboxItem("Skin", Resource.BUNDLE_FLOWER));
+        put("Flay", new CheckListboxItem("Flay", Resource.BUNDLE_FLOWER));
+        put("Butcher", new CheckListboxItem("Butcher", Resource.BUNDLE_FLOWER));
+        put("Giddyup!", new CheckListboxItem("Giddyup!", Resource.BUNDLE_FLOWER));
+        put("Shear wool", new CheckListboxItem("Shear wool", Resource.BUNDLE_FLOWER));
+        put("Collect bones", new CheckListboxItem("Collect bones", Resource.BUNDLE_FLOWER));
+        put("Tether horse", new CheckListboxItem("Tether horse", Resource.BUNDLE_FLOWER));
+        put("Harvest wax", new CheckListboxItem("Harvest wax", Resource.BUNDLE_FLOWER));
+        put("Slice up", new CheckListboxItem("Slice up", Resource.BUNDLE_FLOWER));
+        put("Chip stone", new CheckListboxItem("Chip stone", Resource.BUNDLE_FLOWER));
+        put("Peer into", new CheckListboxItem("Peer into", Resource.BUNDLE_FLOWER));
+        put("Break", new CheckListboxItem("Break", Resource.BUNDLE_FLOWER));
+        put("Scale", new CheckListboxItem("Scale", Resource.BUNDLE_FLOWER));
+        put("Crack open", new CheckListboxItem("Crack open", Resource.BUNDLE_FLOWER));
+    }};
 
     private static void usage(PrintStream out) {
         out.println("usage: haven.jar [OPTIONS] [SERVER[:PORT]]");

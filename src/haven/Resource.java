@@ -29,6 +29,9 @@ package haven;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.*;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
 import java.util.*;
 import java.util.function.*;
 import java.net.*;
@@ -50,12 +53,86 @@ public class Resource implements Serializable {
     public static Class<Audio> audio = Audio.class;
     public static Class<Tooltip> tooltip = Tooltip.class;
 
+    public static final String language = Utils.getpref("language", "en");
+    public static final String BUNDLE_TOOLTIP = "tooltip";
+    public static final String BUNDLE_PAGINA = "pagina";
+    public static final String BUNDLE_WINDOW = "window";
+    public static final String BUNDLE_BUTTON = "button";
+    public static final String BUNDLE_FLOWER = "flower";
+    public static final String BUNDLE_MSG = "msg";
+    public static final String BUNDLE_LABEL = "label";
+    public static final String BUNDLE_ACTION = "action";
+    public static final String BUNDLE_INGREDIENT = "ingredient";
+    private final static Map<String, Map<String, String>> l10nBundleMap;
+    public static final boolean L10N_DEBUG = System.getProperty("dumpstr") != null;
+
     private Collection<Layer> layers = new LinkedList<Layer>();
     public final String name;
     public int ver;
     public ResSource source;
     public final transient Pool pool;
     private boolean used = false;
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Map<String, String> l10n(String bundle, String langcode) {
+        Properties props = new Properties();
+
+        InputStream is = Config.class.getClassLoader().getResourceAsStream("l10n/" + bundle + "_" + langcode + ".properties");
+        if (is == null)
+            return null;
+
+        InputStreamReader isr = null;
+        try {
+            isr = new InputStreamReader(is, "UTF-8");
+            props.load(isr);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (isr != null) {
+                try {
+                    isr.close();
+                } catch (IOException e) { // ignored
+                }
+            }
+        }
+
+        return props.size() > 0 ? new HashMap<>((Map) props) : null;
+    }
+
+    static {
+        l10nBundleMap =  new HashMap<String, Map<String, String>>(9) {{
+            if (!language.equals("en") || Resource.L10N_DEBUG) {
+                put(BUNDLE_TOOLTIP, l10n(BUNDLE_TOOLTIP, language));
+                put(BUNDLE_PAGINA, l10n(BUNDLE_PAGINA, language));
+                put(BUNDLE_WINDOW, l10n(BUNDLE_WINDOW, language));
+                put(BUNDLE_BUTTON, l10n(BUNDLE_BUTTON, language));
+                put(BUNDLE_FLOWER, l10n(BUNDLE_FLOWER, language));
+                put(BUNDLE_MSG, l10n(BUNDLE_MSG, language));
+                put(BUNDLE_LABEL, l10n(BUNDLE_LABEL, language));
+                put(BUNDLE_ACTION, l10n(BUNDLE_ACTION, language));
+                put(BUNDLE_INGREDIENT, l10n(BUNDLE_INGREDIENT, language));
+            }
+        }};
+
+        for (Class<?> cl : dolda.jglob.Loader.get(LayerName.class).classes()) {
+            String nm = cl.getAnnotation(LayerName.class).value();
+            if (LayerFactory.class.isAssignableFrom(cl)) {
+                try {
+                    addltype(nm, cl.asSubclass(LayerFactory.class).newInstance());
+                } catch (InstantiationException e) {
+                    throw (new Error(e));
+                } catch (IllegalAccessException e) {
+                    throw (new Error(e));
+                }
+            } else if (Layer.class.isAssignableFrom(cl)) {
+                addltype(nm, cl.asSubclass(Layer.class));
+            } else {
+                throw (new Error("Illegal resource layer class: " + cl));
+            }
+        }
+    }
 
     public abstract static class Named implements Indir<Resource> {
         public final String name;
@@ -82,6 +159,225 @@ public class Resource implements Serializable {
         public String toString() {
             return (String.format("#<res-name %s v%d>", name, ver));
         }
+    }
+
+    private static final String[] fmtLocStringsLabel = new String[]{
+            "Health: %s",
+            "Stamina: %s",
+            "Energy: %s",
+            "Pony Power: %s",
+            "Hunger modifier: %s",
+            "Food event bonus: %s",
+            "Tell %s of your exploits",
+            "Go laugh at %s",
+            "Go rage at %s",
+            "Go wave to %s",
+            "Greet %s",
+            "Visit %s",
+            "Meeting %s",
+            "%s's Biddings",
+            "%s's Labors",
+            "%s's Laundry List",
+            "Believing in %s",
+            "%s's Wild Hunt",
+            "%s's Quest",
+            "By %s's Command",
+            "%s's Quarry",
+            "Hunting for %s",
+            "Grass, Stone, and %s",
+            "%s's Tasks",
+            "%s's Business",
+            "%s Giving the Chase",
+            "A Favor for %s",
+            "%s's Laughter",
+            "Blood for %s",
+            "%s's Follies",
+            "Under %s's Star",
+            "%s's Story",
+            "Errands for %s",
+            "Affair with %s",
+            "%s's Catch",
+            "As %s Wishes",
+            "Poaching for %s",
+            "Crazy Old %s",
+            "Flowers for %s",
+            "Silly %s",
+            "%s's Gathering",
+            "In Name of %s",
+            "%s's Dirty Laundry",
+            "What %s Asked",
+            "Tasked by %s",
+            "What %s Asked",
+            "One for %s",
+            "Fair Game for %s",
+            "Meditations on %s",
+            "%s's Wild Harvest",
+            "%s has invited you to join his party. Do you wish to do so?",
+            "%s has requested to spar with you. Do you accept?",
+            "Experience points gained: %s",
+            "Here lies %s",
+            "Create a level %d artifact"
+    };
+
+    private static void saveStrings(String bundle, String key, String val) {
+        synchronized (Resource.class) {
+            if (bundle.equals(BUNDLE_FLOWER)) {
+                if (key.startsWith("Follow ") || key.startsWith("Travel along") ||
+                        key.startsWith("Extend ") && key.startsWith("Connect "))
+                    return;
+            }
+
+            Map<String, String> map = l10nBundleMap.get(bundle);
+
+            if (bundle.equals(BUNDLE_TOOLTIP) &&
+                    (key.startsWith("paginae/act") || key.startsWith("paginae/bld")
+                            || key.startsWith("paginae/craft") || key.startsWith("paginae/gov")
+                            || key.startsWith("paginae/pose") || key.startsWith("paginae/amber")
+                            || key.startsWith("paginae/atk/ashoot") || key.startsWith("paginae/seid")))
+                return;
+
+            if (key == null || key.equals("") || val.equals(""))
+                return;
+
+            if (val.charAt(0) >= '0' && val.charAt(0) <= '9')
+                return;
+
+            if (key.startsWith("Village shield:") ||
+                    key.endsWith("is ONLINE") || key.endsWith("is offline") ||
+                    key.startsWith("Born to ") ||
+                    key.equals("ui/r-enact"))
+                return;
+
+            if (bundle == BUNDLE_LABEL) {
+                for (String s : fmtLocStringsLabel) {
+                    if (fmtLocString(map, key, s) != null)
+                        return;
+                }
+            } else if (bundle == BUNDLE_FLOWER) {
+                for (String s : fmtLocStringsFlower) {
+                    if (fmtLocString(map, key, s) != null)
+                        return;
+                }
+            } else if (bundle == BUNDLE_MSG) {
+                for (String s : fmtLocStringsMsg) {
+                    if (fmtLocString(map, key, s) != null)
+                        return;
+                }
+            }
+
+            val = sanitizeVal(val);
+
+            String valOld = map.get(key);
+            if (valOld != null && sanitizeVal(valOld).equals(val))
+                return;
+
+            new File("l10n").mkdirs();
+
+            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+            encoder.onMalformedInput(CodingErrorAction.REPORT);
+            encoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+            BufferedWriter out = null;
+            try {
+                map.put(key, val);
+                key = key.replace(" ", "\\ ").replace(":", "\\:").replace("=", "\\=").replace("\n", "\\n");
+                if (key.startsWith("\\ "))
+                    key = "\\u0020" + key.substring(2);
+                if (key.endsWith("\\ "))
+                    key = key.substring(0, key.length() - 2) + "\\u0020";
+                out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("l10n/" + bundle + "_new.properties", true), encoder));
+                out.write(key + " = " + val);
+                out.newLine();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            return;
+        }
+    }
+
+    private static String sanitizeVal(String val) {
+        val = val.replace("\\", "\\\\").replace("\n", "\\n").replace("\u0000", "");
+        if (val.startsWith(" "))
+            val = "\\u0020" + val.substring(1);
+        if (val.endsWith(" "))
+            val = val.substring(0, val.length() - 1) + "\\u0020";
+
+        while (val.endsWith("\\n"))
+            val = val.substring(0, val.length() - 2);
+
+        return val;
+    }
+
+    private static String fmtLocString(Map<String, String> map, String key, String s) {
+        String ll = map.get(s);
+        if (ll != null) {
+            int vi = s.indexOf("%s");
+
+            String sufix = s.substring(vi + 2);
+            if (sufix.startsWith("%%"))                // fix for strings with escaped percentage sign
+                sufix = sufix.substring(1);
+
+            if (key.startsWith(s.substring(0, vi)) && key.endsWith(sufix))
+                return String.format(ll, key.substring(vi, key.length() - sufix.length()));
+        }
+        return null;
+    }
+
+    private static final String[] fmtLocStringsFlower = new String[]{
+            "Gild (%s%% chance)"
+    };
+
+    private static final String[] fmtLocStringsMsg = new String[]{
+            "That land is owned by %s.",
+            "The name of this charterstone is \"%s\".",
+            "Will refill in %s days",
+            "Will refill in %s hours",
+            "Will refill in %s minutes",
+            "Will refill in %s seconds",
+            "Will refill in %s second",
+            "Quality: %s",
+            "%s%% grown",
+            "The battering ram cannot be used until the glue has dried, in %s hours."
+    };
+
+    public static String getLocString(String bundle, String key) {
+        Map<String, String> map = l10nBundleMap.get(bundle);
+        if (map == null || key == null)
+            return key;
+        if (Resource.L10N_DEBUG)
+            Resource.saveStrings(bundle, key, key);
+        String ll = map.get(key);
+        // strings which need to be formatted
+        if (ll == null && bundle == BUNDLE_LABEL) {
+            for (String s : fmtLocStringsLabel) {
+                String llfmt = fmtLocString(map, key, s);
+                if (llfmt != null)
+                    return llfmt;
+            }
+        } else if (ll == null && bundle == BUNDLE_FLOWER) {
+            for (String s : fmtLocStringsFlower) {
+                String llfmt = fmtLocString(map, key, s);
+                if (llfmt != null)
+                    return llfmt;
+            }
+        } else if (ll == null && bundle == BUNDLE_MSG) {
+            for (String s : fmtLocStringsMsg) {
+                String llfmt = fmtLocString(map, key, s);
+                if (llfmt != null)
+                    return llfmt;
+            }
+        }
+        return ll != null ? ll : key;
     }
 
     public static class Spec extends Named implements Serializable {

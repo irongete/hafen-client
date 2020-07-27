@@ -378,6 +378,10 @@ public class OptWnd extends Window {
             super();
             Widget cont = add(new Scrollport(new Coord(300, 300))).cont;
             int y = 0;
+            cont.adda(new Label("General"), cont.sz.x / 2, y, 0.5, 0);
+            y += 20;
+            y = addbtn(cont, "Drink", GameUI.kb_drink, y);
+
             cont.adda(new Label("Main menu"), cont.sz.x / 2, y, 0.5, 0);
             y += 20;
             y = addbtn(cont, "Inventory", GameUI.kb_inv, y);
@@ -587,18 +591,18 @@ public class OptWnd extends Window {
                 public void click() {
                     getparent(GameUI.class).act("lo", "cs");
                 }
-            }, new Coord(0, 120));
+            }, new Coord(0, 150));
             main.add(new Button(200, "Log out") {
                 public void click() {
                     getparent(GameUI.class).act("lo");
                 }
-            }, new Coord(0, 150));
+            }, new Coord(0, 180));
         }
         main.add(new Button(200, "Close") {
             public void click() {
                 OptWnd.this.hide();
             }
-        }, new Coord(0, 180));
+        }, new Coord(0, 210));
         main.pack();
 
         y = 0;

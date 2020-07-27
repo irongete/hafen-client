@@ -70,6 +70,142 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Bufflist buffs;
     public QuickSlotsWdg quickslots;
 
+    public List<IMeter.Meter> getmeters(String name) {
+        for (Widget meter : meters) {
+            if (meter instanceof IMeter) {
+                IMeter im = (IMeter) meter;
+                try {
+                    Resource res = im.bg.get();
+                    if (res != null && res.basename().equals(name)) {
+                        return im.meters;
+                    }
+                } catch (Loading l) {
+                }
+            }
+        }
+        return null;
+    }
+
+    /***
+     * Getmeter - gets the ui meter like health stamina or energy.
+     * @param name can be "hp" "stam" or "nrj" , i didn't check the horse meter names
+     * @param midx can be the iterator of which meter you want, 0/1/2/3 etc..
+     * @return
+     */
+    public IMeter.Meter getmeter(String name, int midx) {
+        List<IMeter.Meter> meters = getmeters(name);
+        if (meters != null && midx < meters.size())
+            return meters.get(midx);
+        return null;
+    }
+
+    public List<Inventory> getAllInventories() {
+        List<Inventory> inventories = new ArrayList<Inventory>();
+        for (Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+            if (wdg instanceof Window) {
+                for (Widget wdgi = wdg.lchild; wdgi != null; wdgi = wdgi.prev) {
+                    if (wdgi instanceof Inventory) {
+                        inventories.add((Inventory) wdgi);
+                    }
+                }
+            }
+        }
+        return inventories;
+    }
+
+    public boolean drink(int threshold) {
+        IMeter.Meter stam = getmeter("stam", 0);
+        IMeter.Meter nrj = getmeter("nrj", 0);
+
+        if (stam == null || stam.a > threshold)
+            return false;
+
+        List<WItem> containers = new ArrayList<WItem>();
+        List<Inventory> inventories = getAllInventories();
+        for (Inventory i : inventories) {
+            containers.addAll(i.getItemsPartial("Waterskin", "Waterflask", "Kuksa", "Bucket"));
+        }
+        for (int i = 6; i <= 7; i++) {
+            try {
+                if (getequipory().quickslots[i].item.res.get().basename().equals("bucket-water")) {
+                    containers.add(getequipory().quickslots[i]);
+                }
+            } catch (Loading e) {
+            } catch (NullPointerException e) {
+            }
+        }
+        Collections.reverse(containers); //reverse so we dont drink same containers as craftwindow
+
+        WItem waterContainer = null;
+        WItem teaContainer = null;
+        WItem waterInventory = null;
+        WItem teaInventory = null;
+
+        for (WItem wi : containers) {
+            ItemInfo.Contents cont = wi.item.getcontents();
+            boolean isWater = false;
+            if (cont == null)
+                continue;
+
+            //check if there is Water and/or Tea in inventory
+            for (ItemInfo info : cont.sub) {
+                if (info instanceof ItemInfo.Name) {
+                    ItemInfo.Name infoName = (ItemInfo.Name) info;
+                    if (infoName.str.text.contains("Water")) {
+                        //System.out.println("WATER CONTAINER");
+                        waterContainer = wi;
+                        waterInventory = wi;
+                    }
+                    if (infoName.str.text.contains("Tea")) {
+                        //System.out.println("TEA CONTAINER");
+                        teaContainer = wi;
+                        teaInventory = wi;
+                    }
+                }
+            }
+        }
+
+        // if player is in combat prioritize water over tea
+        if (fv != null && fv.current != null && waterContainer != null) {
+            FlowerMenu.setNextSelection("Drink");
+            ui.lcc = waterInventory.rootpos();
+            waterContainer.item.wdgmsg("iact", waterInventory.c, 0);
+            return true;
+        }
+        // if there is no water, Drink tea
+        else if (fv != null && fv.current != null && teaContainer != null) {
+            FlowerMenu.setNextSelection("Drink");
+            ui.lcc = teaInventory.rootpos();
+            teaContainer.item.wdgmsg("iact", teaInventory.c, 0);
+        }
+        // not combat
+        else {
+            // if energy less than 9500 Sip tea
+            if (nrj.a < 95 && teaContainer != null) {
+                //System.out.println("if energy less than 9500 Sip tea");
+                FlowerMenu.setNextSelection("Sip");
+                ui.lcc = teaInventory.rootpos();
+                teaContainer.item.wdgmsg("iact", teaInventory.c, 0);
+                return true;
+                // no tea, Drink water
+            } else if (waterContainer != null) {
+                //System.out.println("no tea, drink water");
+                FlowerMenu.setNextSelection("Drink");
+                ui.lcc = waterInventory.rootpos();
+                waterContainer.item.wdgmsg("iact", waterInventory.c, 0);
+                return true;
+            }
+            else if (waterContainer == null && teaContainer != null) {
+                //System.out.println("waterContainer == null && teaContainer != null");
+                FlowerMenu.setNextSelection("Sip");
+                ui.lcc = teaInventory.rootpos();
+                teaContainer.item.wdgmsg("iact", teaInventory.c, 0);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static final OwnerContext.ClassResolver<BeltSlot> beltctxr = new OwnerContext.ClassResolver<BeltSlot>()
             .add(Glob.class, slot -> slot.wdg().ui.sess.glob)
             .add(Session.class, slot -> slot.wdg().ui.sess);
@@ -205,7 +341,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         zerg.hide();
 
         //quickslots = new QuickSlotsWdg();
-        quickslots = add(new QuickSlotsWdg());
+        //quickslots = add(new QuickSlotsWdg());
         //add(quickslots, Utils.getprefc("quickslotsc", new Coord(300, 80)));
 
     }
@@ -1113,6 +1249,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public static final KeyBinding kb_chr = KeyBinding.get("chr", KeyMatch.forchar('T', KeyMatch.C));
     public static final KeyBinding kb_bud = KeyBinding.get("bud", KeyMatch.forchar('B', KeyMatch.C));
     public static final KeyBinding kb_opt = KeyBinding.get("opt", KeyMatch.forchar('O', KeyMatch.C));
+
+    public static final KeyBinding kb_drink = KeyBinding.get("drink", KeyMatch.forchar('º', 0));
+
     private static final Tex menubg = Resource.loadtex("gfx/hud/rbtn-bg");
 
     public class MainMenu extends Widget {
@@ -1182,6 +1321,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
         } else if (kb_hide.key().match(ev)) {
             toggleui();
             return (true);
+        } else if (kb_drink.key().match(ev)) {
+            drink(100);
         } else if (kb_chat.key().match(ev)) {
             if (chat.visible && !chat.hasfocus) {
                 setfocus(chat);

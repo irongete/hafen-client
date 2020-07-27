@@ -52,6 +52,26 @@ public class Inventory extends Widget implements DTarget {
         super.draw(g);
     }
 
+    /* Following getItem* methods do partial matching of the name *on purpose*.
+       Because when localization is turned on, original English name will be in the brackets
+       next to the translation
+    */
+    public List<WItem> getItemsPartial(String... names) {
+        List<WItem> items = new ArrayList<WItem>();
+        for (Widget wdg = child; wdg != null; wdg = wdg.next) {
+            if (wdg instanceof WItem) {
+                String wdgname = ((WItem)wdg).item.getname();
+                for (String name : names) {
+                    if (wdgname.contains(name)) {
+                        items.add((WItem) wdg);
+                        break;
+                    }
+                }
+            }
+        }
+        return items;
+    }
+
     public Inventory(Coord sz) {
         super(invsq.sz().add(new Coord(-1, -1)).mul(sz).add(new Coord(1, 1)));
         isz = sz;

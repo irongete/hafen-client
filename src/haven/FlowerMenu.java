@@ -40,6 +40,9 @@ public class FlowerMenu extends Widget {
     public static final int ph = 30, ppl = 8;
     public Petal[] opts;
     private UI.Grab mg, kg;
+    private static String nextAutoSel;
+    private static long nextAutoSelTimeout;
+    public static int numberOfAutoselects = 0;
 
     @RName("sm")
     public static class $_ implements Factory {
@@ -57,6 +60,7 @@ public class FlowerMenu extends Widget {
         public int num;
         private Text text;
         private double a = 1;
+        private final static double rad = 75;
 
         public Petal(String name) {
             super(Coord.z);
@@ -64,6 +68,8 @@ public class FlowerMenu extends Widget {
             text = ptf.render(name, ptc);
             resize(text.sz().x + 25, ph);
         }
+
+
 
         public void move(Coord c) {
             this.c = c.sub(sz.div(2));
@@ -98,20 +104,34 @@ public class FlowerMenu extends Widget {
         return (-1.8633 * a * a + 2.8633 * a);
     }
 
+    public static void setNextSelection(String name) {
+        nextAutoSel = name;
+        nextAutoSelTimeout = System.currentTimeMillis();
+    }
+
     public class Opening extends NormAnim {
         Opening() {
             super(Config.instantflowermenu ? 0 : 0.25);
         }
 
         public void ntick(double s) {
-            double ival = 0.8;
-            double off = (opts.length == 1) ? 0.0 : ((1.0 - ival) / (opts.length - 1));
-            for (int i = 0; i < opts.length; i++) {
-                Petal p = opts[i];
-                double a = Utils.clip((s - (off * i)) * (1.0 / ival), 0, 1);
-                double b = nxf(a);
-                p.move(p.ta + ((1 - b) * PI), p.tr * b);
-                p.a = a;
+            for (Petal p : opts) {
+                p.move(p.ta + ((1 - s) * PI), p.rad * s);
+                p.a = s;
+                if (s == 1.0) {
+                    CheckListboxItem itm = Config.flowermenus.get(p.name);
+                    if (itm != null && itm.selected && !ui.modmeta ||
+                            p.name.equals(nextAutoSel) && System.currentTimeMillis() - nextAutoSelTimeout < 2000) {
+                        nextAutoSel = null;
+                        numberOfAutoselects += 1;
+                        choose(p);
+                        break;
+                    } else if (nextAutoSel != null && nextAutoSel.equals("cancel")) {
+                        nextAutoSel = null;
+                        choose(null);
+                        break;
+                    }
+                }
             }
         }
     }
