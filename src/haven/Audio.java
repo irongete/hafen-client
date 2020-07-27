@@ -36,7 +36,7 @@ public class Audio {
     public static boolean enabled = true;
     private static Player player;
     public static final AudioFormat fmt = new AudioFormat(44100, 16, 2, true, false);
-    private static int bufsize = 4096;
+    private static int bufsize = 8192;
     public static double volume = 1.0;
 
     static {
